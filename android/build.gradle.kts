@@ -1,3 +1,5 @@
+import com.android.build.gradle.BaseExtension
+
 allprojects {
     repositories {
         google()
@@ -17,6 +19,17 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+subprojects {
+    afterEvaluate {
+        if (project.extensions.findByName("android") != null) {
+            val android = project.extensions.getByName("android") as com.android.build.gradle.BaseExtension
+            if (android.namespace == null) {
+                android.namespace = "com.example." + project.name.replace("-", "_")
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
