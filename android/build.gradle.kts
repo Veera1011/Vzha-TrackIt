@@ -24,6 +24,12 @@ subprojects {
     val configureNamespace = {
         if (project.extensions.findByName("android") != null) {
             val android = project.extensions.getByName("android") as com.android.build.gradle.BaseExtension
+            
+            // Fix for 'lStar' resource not found error
+            if (android.compileSdkVersion == null || (android.compileSdkVersion != null && android.compileSdkVersion!!.contains("30"))) {
+                android.compileSdkVersion(34)
+            }
+
             if (android.namespace == null) {
                 android.namespace = "com.example." + project.name.replace("-", "_")
             }

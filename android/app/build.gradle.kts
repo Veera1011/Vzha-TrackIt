@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.vzha_trackit"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
