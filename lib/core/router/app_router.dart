@@ -19,6 +19,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/low_code/presentation/screens/module_builder_screen.dart';
 import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
 import '../../features/transactions/presentation/screens/export_screen.dart';
+import '../../features/transactions/data/models/transaction_model.dart';
 import '../../features/common/presentation/screens/file_preview_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -56,7 +57,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add-transaction',
-        builder: (context, state) => const AddTransactionScreen(),
+        builder: (context, state) {
+          final tx = state.extra as TransactionModel?;
+          return AddTransactionScreen(transaction: tx);
+        },
       ),
       GoRoute(
         path: '/sip-calculator',

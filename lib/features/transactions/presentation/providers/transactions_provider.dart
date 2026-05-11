@@ -36,3 +36,12 @@ final transactionsProvider = FutureProvider<List<TransactionModel>>((ref) async 
     rethrow;
   }
 });
+
+Future<void> deleteTransaction(WidgetRef ref, String id) async {
+  await Supabase.instance.client
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+  
+  ref.invalidate(transactionsProvider);
+}

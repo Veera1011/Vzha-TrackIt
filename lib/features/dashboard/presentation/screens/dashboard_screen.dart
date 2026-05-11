@@ -5,9 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/tenant_provider.dart';
 import '../../../transactions/presentation/screens/transactions_screen.dart';
+import '../../../master_data/presentation/providers/master_data_provider.dart';
 import '../../../master_data/presentation/screens/master_data_screen.dart';
 import '../../../investments/presentation/screens/investments_screen.dart';
 import '../../../low_code/presentation/screens/low_code_forms_screen.dart';
+import '../../../transactions/data/models/transaction_model.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../providers/dashboard_provider.dart';
 
@@ -105,6 +107,7 @@ class _HomeTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(dashboardSummaryProvider);
     final sym = ref.watch(themeProvider).currencySymbol;
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -207,48 +210,97 @@ class _HomeTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Income vs Expense', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          const Text('Category Spending', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          if (summary.totalIncome > 0 || summary.totalExpenses > 0)
-            SizedBox(
-              height: 200,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                      sections: [
-                        if (summary.totalIncome > 0)
-                          PieChartSectionData(
-                            color: Colors.green,
-                            value: summary.totalIncome,
-                            title: '${((summary.totalIncome / (summary.totalIncome + summary.totalExpenses)) * 100).toStringAsFixed(0)}%',
-                            radius: 50,
-                            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+          categoriesAsync.when(
+            data: (categories) {
+              if (summary.categoryExpenses.isEmpty) return const Card(child: Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No expenses to show'))));
+              
+              final sortedCats = summary.categoryExpenses.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value));
+              final topCats = sortedCats.take(5).toList();
+
+              return SizedBox(
+                height: 250,
+                child: Card(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: PieChart(
+                          PieChartData(
+                            sections: topCats.asMap().entries.map((e) {
+                              final cat = categories.firstWhere((c) => c.id == e.value.key, orElse: () => categories.first);
+                              return PieChartSectionData(
+                                color: Colors.primaries[e.key % Colors.primaries.length],
+                                value: e.value.value,
+                                title: '',
+                                radius: 40,
+                              );
+                            }).toList(),
                           ),
-                        if (summary.totalExpenses > 0)
-                          PieChartSectionData(
-                            color: Colors.red,
-                            value: summary.totalExpenses,
-                            title: '${((summary.totalExpenses / (summary.totalIncome + summary.totalExpenses)) * 100).toStringAsFixed(0)}%',
-                            radius: 50,
-                            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                      ],
-                    ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: topCats.asMap().entries.map((e) {
+                            final cat = categories.firstWhere((c) => c.id == e.value.key, orElse: () => categories.first);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Container(width: 12, height: 12, color: Colors.primaries[e.key % Colors.primaries.length]),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(cat.name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+                                  Text('\$${e.value.value.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 8),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            )
-          else
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(child: Text('Add transactions to see charts')),
-              ),
-            ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error: $e'),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Recent Transactions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              TextButton(onPressed: () {}, child: const Text('View All')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: summary.recentTransactions.length,
+            itemBuilder: (context, index) {
+              final tx = summary.recentTransactions[index];
+              final isIncome = tx.type == 'income';
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: isIncome ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                  child: Icon(isIncome ? Icons.arrow_downward : Icons.arrow_upward, color: isIncome ? Colors.green : Colors.red, size: 16),
+                ),
+                title: Text(tx.description.isNotEmpty ? tx.description : 'Transaction'),
+                subtitle: Text('${tx.date.toLocal()}'.split(' ')[0]),
+                trailing: Text(
+                  '${isIncome ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
+                  style: TextStyle(color: isIncome ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 80),
         ],
       ),
     );

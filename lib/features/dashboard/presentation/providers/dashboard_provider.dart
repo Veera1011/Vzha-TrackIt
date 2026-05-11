@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../transactions/data/models/transaction_model.dart';
 import '../../../transactions/presentation/providers/transactions_provider.dart';
 
 class DashboardSummary {
@@ -7,6 +8,8 @@ class DashboardSummary {
   final double totalExpenses;
   final Map<int, double> last7DaysIncome;
   final Map<int, double> last7DaysExpense;
+  final Map<String, double> categoryExpenses;
+  final List<TransactionModel> recentTransactions;
 
   DashboardSummary({
     required this.totalBalance,
@@ -14,6 +17,8 @@ class DashboardSummary {
     required this.totalExpenses,
     required this.last7DaysIncome,
     required this.last7DaysExpense,
+    required this.categoryExpenses,
+    required this.recentTransactions,
   });
 }
 
@@ -26,6 +31,7 @@ final dashboardSummaryProvider = Provider<DashboardSummary>((ref) {
       double expenses = 0;
       Map<int, double> dailyIncome = {for (var i = 0; i < 7; i++) i: 0.0};
       Map<int, double> dailyExpense = {for (var i = 0; i < 7; i++) i: 0.0};
+      Map<String, double> catExpenses = {};
       
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
@@ -35,6 +41,9 @@ final dashboardSummaryProvider = Provider<DashboardSummary>((ref) {
           income += tx.amount;
         } else if (tx.type == 'expense') {
           expenses += tx.amount;
+          if (tx.categoryId != null) {
+            catExpenses[tx.categoryId!] = (catExpenses[tx.categoryId!] ?? 0) + tx.amount;
+          }
         }
         
         // Calculate days ago
@@ -56,6 +65,8 @@ final dashboardSummaryProvider = Provider<DashboardSummary>((ref) {
         totalExpenses: expenses,
         last7DaysIncome: dailyIncome,
         last7DaysExpense: dailyExpense,
+        categoryExpenses: catExpenses,
+        recentTransactions: transactions.take(5).toList(),
       );
     },
     orElse: () => DashboardSummary(
@@ -64,6 +75,8 @@ final dashboardSummaryProvider = Provider<DashboardSummary>((ref) {
       totalExpenses: 0,
       last7DaysIncome: {for (var i = 0; i < 7; i++) i: 0.0},
       last7DaysExpense: {for (var i = 0; i < 7; i++) i: 0.0},
+      categoryExpenses: {},
+      recentTransactions: [],
     ),
   );
 });

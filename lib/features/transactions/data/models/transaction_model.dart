@@ -12,6 +12,8 @@ class TransactionModel {
   @Index()
   final String tenantId;
   
+  final String? accountId;
+  final String? categoryId;
   final double amount;
   final String type;
   final DateTime date;
@@ -21,6 +23,8 @@ class TransactionModel {
   TransactionModel({
     required this.id,
     required this.tenantId,
+    this.accountId,
+    this.categoryId,
     required this.amount,
     required this.type,
     required this.date,
@@ -32,6 +36,8 @@ class TransactionModel {
     return TransactionModel(
       id: json['id'],
       tenantId: json['tenant_id'],
+      accountId: json['account_id'],
+      categoryId: json['category_id'],
       amount: double.parse(json['amount'].toString()),
       type: json['type'],
       date: DateTime.parse(json['date']),
@@ -44,6 +50,8 @@ class TransactionModel {
     return {
       'id': id,
       'tenant_id': tenantId,
+      'account_id': accountId,
+      'category_id': categoryId,
       'amount': amount,
       'type': type,
       'date': date.toIso8601String(),

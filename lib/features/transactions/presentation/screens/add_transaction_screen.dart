@@ -6,25 +6,39 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/snackbar_util.dart';
 import '../../../../core/providers/tenant_provider.dart';
 import '../../../master_data/presentation/providers/master_data_provider.dart';
+import '../../data/models/transaction_model.dart';
 import '../providers/transactions_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  final TransactionModel? transaction;
+  const AddTransactionScreen({super.key, this.transaction});
 
   @override
   ConsumerState<AddTransactionScreen> createState() => _AddTransactionScreenState();
 }
 
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
-  final _amountController = TextEditingController();
-  final _descController = TextEditingController();
-  String _type = 'expense';
+  late final TextEditingController _amountController;
+  late final TextEditingController _descController;
+  late String _type;
   String? _selectedAccountId;
   String? _selectedCategoryId;
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
   bool _isLoading = false;
   XFile? _receiptImage;
   String? _receiptUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final tx = widget.transaction;
+    _amountController = TextEditingController(text: tx?.amount.toString() ?? '');
+    _descController = TextEditingController(text: tx?.description ?? '');
+    _type = tx?.type ?? 'expense';
+    _selectedAccountId = tx?.accountId;
+    _selectedCategoryId = tx?.categoryId;
+    _selectedDate = tx?.date ?? DateTime.now();
+  }
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -68,8 +82,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             .getPublicUrl(filePath);
       }
 
-      // 2. Save Transaction
-      await Supabase.instance.client.from('transactions').insert({
+      final data = {
         'tenant_id': tenantId,
         'account_id': _selectedAccountId,
         'category_id': _selectedCategoryId,
@@ -79,20 +92,29 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         'description': _descController.text.trim(),
         'created_by': userId,
         'status': 'completed',
-        // Optional receipt URL. It will silently fail to insert this column if the schema wasn't updated, 
-        // but Supabase usually ignores unknown columns if configured, or we can assume it was added.
         if (_receiptUrl != null) 'receipt_url': _receiptUrl,
-      });
+      };
 
-      // Invalidate to refresh the list and dashboard summary
+      if (widget.transaction != null) {
+        // Update existing
+        await Supabase.instance.client
+            .from('transactions')
+            .update(data)
+            .eq('id', widget.transaction!.id);
+      } else {
+        // Insert new
+        await Supabase.instance.client.from('transactions').insert(data);
+      }
+
+      // Invalidate to refresh the list
       ref.invalidate(transactionsProvider);
 
       if (mounted) {
-        SnackbarUtil.showSuccess(context, 'Transaction added.');
+        SnackbarUtil.showSuccess(context, widget.transaction != null ? 'Transaction updated.' : 'Transaction added.');
         context.pop();
       }
     } catch (e) {
-      if (mounted) SnackbarUtil.showError(context, 'Failed to add transaction. Check if "receipts" bucket exists.');
+      if (mounted) SnackbarUtil.showError(context, 'Failed to save transaction.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -111,7 +133,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Transaction')),
+      appBar: AppBar(title: Text(widget.transaction != null ? 'Edit Transaction' : 'Add Transaction')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -123,7 +145,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ButtonSegment(value: 'income', label: Text('Income'), icon: Icon(Icons.arrow_downward)),
               ],
               selected: {_type},
-              onSelectionChanged: (set) => setState(() => _type = set.first),
+              onSelectionChanged: (set) => setState(() {
+                _type = set.first;
+                _selectedCategoryId = null; // Clear category when switching type
+              }),
             ),
             const SizedBox(height: 24),
             TextFormField(
@@ -136,11 +161,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             accountsAsync.when(
               data: (accounts) => DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Account'),
-                initialValue: _selectedAccountId,
+                value: _selectedAccountId,
                 items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
                 onChanged: (val) => setState(() => _selectedAccountId = val),
               ),
-              loading: () => const CircularProgressIndicator(),
+              loading: () => const Center(child: LinearProgressIndicator()),
               error: (e, s) => Text('Error loading accounts: $e'),
             ),
             const SizedBox(height: 16),
@@ -149,12 +174,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 final filtered = categories.where((c) => c.type == _type).toList();
                 return DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Category'),
-                  initialValue: _selectedCategoryId,
+                  value: _selectedCategoryId,
                   items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
                   onChanged: (val) => setState(() => _selectedCategoryId = val),
                 );
               },
-              loading: () => const CircularProgressIndicator(),
+              loading: () => const Center(child: LinearProgressIndicator()),
               error: (e, s) => Text('Error loading categories: $e'),
             ),
             const SizedBox(height: 16),
@@ -198,7 +223,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               onPressed: _isLoading ? null : _submit,
               child: _isLoading
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Save Transaction'),
+                  : Text(widget.transaction != null ? 'Update Transaction' : 'Save Transaction'),
             ),
           ],
         ),
