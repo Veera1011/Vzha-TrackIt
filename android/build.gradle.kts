@@ -27,7 +27,7 @@ subprojects {
             
             // Fix for 'lStar' resource not found error
             if (android.compileSdkVersion == null || (android.compileSdkVersion != null && android.compileSdkVersion!!.contains("30"))) {
-                android.compileSdkVersion(34)
+                android.compileSdkVersion(36)
             }
 
             if (android.namespace == null) {
