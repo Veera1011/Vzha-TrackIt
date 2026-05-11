@@ -17,20 +17,40 @@ class _ModuleBuilderScreenState extends ConsumerState<ModuleBuilderScreen> {
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final List<Map<String, dynamic>> _fields = [];
+  final List<TextEditingController> _labelControllers = [];
+  final List<TextEditingController> _nameControllers = [];
   bool _isLoading = false;
 
   void _addField() {
     setState(() {
+      final name = 'field_${_fields.length + 1}';
+      const label = 'New Field';
       _fields.add({
-        'name': 'field_${_fields.length + 1}',
-        'label': 'New Field',
+        'name': name,
+        'label': label,
         'type': 'text',
         'required': false,
       });
+      _labelControllers.add(TextEditingController(text: label));
+      _nameControllers.add(TextEditingController(text: name));
     });
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    for (var c in _labelControllers) {
+      c.dispose();
+    }
+    for (var c in _nameControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _saveModule() async {
+// ... existing validation ...
     if (_nameController.text.isEmpty) {
       SnackbarUtil.showError(context, 'Please enter a module name');
       return;
@@ -110,25 +130,35 @@ class _ModuleBuilderScreenState extends ConsumerState<ModuleBuilderScreen> {
                           children: [
                             Expanded(
                               child: TextField(
+                                controller: _labelControllers[index],
                                 decoration: const InputDecoration(labelText: 'Field Label (Display Name)'),
                                 onChanged: (v) {
-                                  setState(() {
-                                    _fields[index]['label'] = v;
-                                    // Auto-generate name from label if not edited
-                                    _fields[index]['name'] = v.toLowerCase().replaceAll(' ', '_');
-                                  });
+                                  _fields[index]['label'] = v;
+                                  // Auto-generate name from label if name wasn't manually edited? 
+                                  // For simplicity here, we update if label changes
+                                  final newName = v.toLowerCase().replaceAll(' ', '_');
+                                  _fields[index]['name'] = newName;
+                                  _nameControllers[index].text = newName;
                                 },
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => setState(() => _fields.removeAt(index)),
+                              onPressed: () {
+                                setState(() {
+                                  _fields.removeAt(index);
+                                  _labelControllers[index].dispose();
+                                  _labelControllers.removeAt(index);
+                                  _nameControllers[index].dispose();
+                                  _nameControllers.removeAt(index);
+                                });
+                              },
                             ),
                           ],
                         ),
                         TextField(
+                          controller: _nameControllers[index],
                           decoration: const InputDecoration(labelText: 'Internal Name (Key)'),
-                          controller: TextEditingController(text: _fields[index]['name']),
                           onChanged: (v) => _fields[index]['name'] = v,
                         ),
                         DropdownButton<String>(

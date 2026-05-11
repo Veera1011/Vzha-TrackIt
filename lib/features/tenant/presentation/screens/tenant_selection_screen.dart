@@ -38,9 +38,6 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
 
         if (_tenants.isEmpty) {
           SnackbarUtil.showInfo(context, 'You do not belong to any workspace. Please create one.');
-        } else if (_tenants.length == 1) {
-          // Auto-select if there's only one tenant
-          _selectTenant(_tenants.first['id']);
         }
       }
     } catch (e) {

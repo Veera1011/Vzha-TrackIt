@@ -173,6 +173,22 @@ CREATE POLICY "Insert tenant categories" ON categories FOR INSERT WITH CHECK (
     tenant_id IN (SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid() AND role IN ('admin', 'owner'))
 );
 
+-- Low-Code Form Definitions
+CREATE POLICY "View tenant form_definitions" ON form_definitions FOR SELECT USING (
+    tenant_id IN (SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid())
+);
+CREATE POLICY "Insert tenant form_definitions" ON form_definitions FOR INSERT WITH CHECK (
+    tenant_id IN (SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid() AND role IN ('admin', 'owner'))
+);
+
+-- Low-Code Dynamic Records
+CREATE POLICY "View tenant dynamic_records" ON dynamic_records FOR SELECT USING (
+    tenant_id IN (SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid())
+);
+CREATE POLICY "Insert tenant dynamic_records" ON dynamic_records FOR INSERT WITH CHECK (
+    tenant_id IN (SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid())
+);
+
 -- Trigger to create a user in public.users when auth.users is created
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$

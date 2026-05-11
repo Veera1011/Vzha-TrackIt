@@ -37,6 +37,20 @@ subprojects {
             configureNamespace()
         }
     }
+
+    // Patch for plugins that still use the 'package' attribute in AndroidManifest.xml
+    project.tasks.matching { it.name.contains("process") && it.name.contains("Manifest") }.configureEach {
+        doFirst {
+            val manifestFile = file("${project.projectDir}/src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                val content = manifestFile.readText()
+                if (content.contains("package=")) {
+                    val newContent = content.replace(Regex("package=\"[^\"]*\""), "")
+                    manifestFile.writeText(newContent)
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

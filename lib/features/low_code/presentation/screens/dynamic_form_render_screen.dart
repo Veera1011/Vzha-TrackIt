@@ -32,11 +32,11 @@ class _DynamicFormRenderScreenState extends ConsumerState<DynamicFormRenderScree
         'created_by': userId,
       });
 
-      ref.invalidate(recordsProvider(widget.formDef.id));
-
       if (mounted) {
         SnackbarUtil.showSuccess(context, 'Record saved successfully.');
-        Navigator.pop(context);
+        setState(() => _formData.clear()); // Clear form after success
+        ref.invalidate(recordsProvider(widget.formDef.id));
+        // Don't pop, let them see history or add another
       }
     } catch (e) {
       if (mounted) SnackbarUtil.showError(context, 'Failed to save record.');
@@ -57,9 +57,16 @@ class _DynamicFormRenderScreenState extends ConsumerState<DynamicFormRenderScree
         child: TextFormField(
           decoration: InputDecoration(
             labelText: label + (required ? ' *' : ''),
+            border: const OutlineInputBorder(),
           ),
           keyboardType: type == 'number' ? TextInputType.number : TextInputType.text,
           onChanged: (val) => _formData[name] = type == 'number' ? num.tryParse(val) : val,
+          validator: (value) {
+            if (required && (value == null || value.isEmpty)) {
+              return 'This field is required';
+            }
+            return null;
+          },
         ),
       );
     } else if (type == 'boolean') {
@@ -78,7 +85,10 @@ class _DynamicFormRenderScreenState extends ConsumerState<DynamicFormRenderScree
       return Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: DropdownButtonFormField<String>(
-          decoration: InputDecoration(labelText: label + (required ? ' *' : '')),
+          decoration: InputDecoration(
+            labelText: label + (required ? ' *' : ''),
+            border: const OutlineInputBorder(),
+          ),
           items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
           onChanged: (val) => _formData[name] = val,
         ),
@@ -113,54 +123,72 @@ class _DynamicFormRenderScreenState extends ConsumerState<DynamicFormRenderScree
             // Tab 1: Form
             SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('New Entry', style: Theme.of(context).textTheme.titleLarge),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      if (fields.isEmpty)
-                        const Text('No fields defined for this module.')
-                      else
-                        ...fields.map(_buildField),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _submit,
-                        child: _isLoading ? const CircularProgressIndicator() : const Text('Submit Record'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('New Entry', style: Theme.of(context).textTheme.titleLarge),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          if (fields.isEmpty)
+                            const Text('No fields defined for this module.')
+                          else
+                            ...fields.map(_buildField),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _submit,
+                            icon: const Icon(Icons.save),
+                            label: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Submit Record'),
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
             // Tab 2: Records
-            Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: recordsAsync.when(
-                data: (records) {
-                  if (records.isEmpty) {
-                    return const Center(child: Text('No records found.'));
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final record = records[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(record.data.values.join(' | ')),
-                          subtitle: Text('Created: ${record.createdAt.toLocal().toString().split('.')[0]}'),
+            recordsAsync.when(
+              data: (records) {
+                if (records.isEmpty) {
+                  return const Center(child: Text('No records found.'));
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: records.length,
+                  itemBuilder: (context, index) {
+                    final record = records[index];
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTile(
+                              leading: const CircleAvatar(child: Icon(Icons.data_object)),
+                              title: Text(
+                                record.data.entries
+                                    .map((e) => '${e.key}: ${e.value}')
+                                    .join(' | '),
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text('Created: ${record.createdAt.toLocal().toString().split('.')[0]}'),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, s) => Center(child: Text('Error: $e')),
-              ),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Center(child: Text('Error: $e')),
             ),
           ],
         ),

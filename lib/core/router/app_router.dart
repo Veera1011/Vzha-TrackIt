@@ -19,6 +19,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/low_code/presentation/screens/module_builder_screen.dart';
 import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
 import '../../features/transactions/presentation/screens/export_screen.dart';
+import '../../features/common/presentation/screens/file_preview_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -91,6 +92,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/export',
         builder: (context, state) => const ExportScreen(),
+      ),
+      GoRoute(
+        path: '/preview',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>;
+          return FilePreviewScreen(
+            filePath: extra['path']!,
+            fileName: extra['name']!,
+          );
+        },
       ),
     ],
   );
