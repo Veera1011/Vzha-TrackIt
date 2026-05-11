@@ -136,7 +136,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             accountsAsync.when(
               data: (accounts) => DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Account'),
-                value: _selectedAccountId,
+                initialValue: _selectedAccountId,
                 items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
                 onChanged: (val) => setState(() => _selectedAccountId = val),
               ),
@@ -149,7 +149,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 final filtered = categories.where((c) => c.type == _type).toList();
                 return DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Category'),
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
                   onChanged: (val) => setState(() => _selectedCategoryId = val),
                 );

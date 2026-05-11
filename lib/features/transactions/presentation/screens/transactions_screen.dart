@@ -23,7 +23,7 @@ class TransactionsScreen extends ConsumerWidget {
               final isIncome = tx.type == 'income';
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: isIncome ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                  backgroundColor: isIncome ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
                   child: Icon(
                     isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                     color: isIncome ? Colors.green : Colors.red,
