@@ -2,9 +2,84 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/investments_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/utils/snackbar_util.dart';
+import '../../../../core/providers/tenant_provider.dart';
 
 class InvestmentsScreen extends ConsumerWidget {
   const InvestmentsScreen({super.key});
+
+  Future<void> _addInvestment(BuildContext context, WidgetRef ref) async {
+    final nameCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String type = 'stocks';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add Investment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Investment Name (e.g. Apple Stock)'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: type,
+                items: const [
+                  DropdownMenuItem(value: 'stocks', child: Text('Stocks')),
+                  DropdownMenuItem(value: 'mf', child: Text('Mutual Funds')),
+                  DropdownMenuItem(value: 'sip', child: Text('SIP')),
+                  DropdownMenuItem(value: 'gold', child: Text('Gold')),
+                  DropdownMenuItem(value: 'crypto', child: Text('Crypto')),
+                ],
+                onChanged: (v) => setState(() => type = v!),
+                decoration: const InputDecoration(labelText: 'Type'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountCtrl,
+                decoration: const InputDecoration(labelText: 'Amount Invested'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountCtrl.text) ?? 0.0;
+                final tenantId = ref.read(activeTenantIdProvider);
+                if (tenantId == null) return;
+
+                try {
+                  await Supabase.instance.client.from('investments').insert({
+                    'tenant_id': tenantId,
+                    'name': nameCtrl.text,
+                    'type': type,
+                    'amount_invested': amount,
+                    'current_value': amount, // Initial current value same as invested
+                    'start_date': DateTime.now().toIso8601String(),
+                  });
+                  ref.invalidate(investmentsProvider);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    SnackbarUtil.showSuccess(ctx, 'Investment added successfully.');
+                  }
+                } catch (e) {
+                  if (ctx.mounted) SnackbarUtil.showError(ctx, 'Failed to add investment.');
+                }
+              },
+              child: const Text('Save'),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,9 +221,7 @@ class InvestmentsScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add Investment modal/screen
-        },
+        onPressed: () => _addInvestment(context, ref),
         child: const Icon(Icons.add),
       ),
     );

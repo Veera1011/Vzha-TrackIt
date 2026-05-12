@@ -51,7 +51,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       const TransactionsScreen(),
       const InvestmentsScreen(),
       const MasterDataScreen(),
-      const LowCodeFormsScreen(),
+      // const LowCodeFormsScreen(),
     ];
 
     return Scaffold(
@@ -92,7 +92,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Transactions'),
           NavigationDestination(icon: Icon(Icons.trending_up_outlined), selectedIcon: Icon(Icons.trending_up), label: 'Investments'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Master Data'),
-          NavigationDestination(icon: Icon(Icons.dynamic_form_outlined), selectedIcon: Icon(Icons.dynamic_form), label: 'Apps'),
+          // NavigationDestination(icon: Icon(Icons.dynamic_form_outlined), selectedIcon: Icon(Icons.dynamic_form), label: 'Apps'),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 # 🚀 VZHA TrackIt — Multi-Tenant Finance Platform
 
-VZHA TrackIt is an enterprise-grade, multi-tenant financial management platform built with Flutter and Supabase. It features a robust offline-first architecture, a dynamic low-code module builder, and cross-platform support for Mobile and Web.
+VZHA TrackIt is an enterprise-grade, multi-tenant financial management platform built with Flutter and Supabase. It features secure data isolation, advanced portfolio tracking, and cross-platform support for Mobile and Web.
 
 ![App Logo](App_log.png)
 
@@ -11,15 +11,15 @@ VZHA TrackIt is an enterprise-grade, multi-tenant financial management platform 
 - **Role-Based Access**: Secure data isolation using Supabase Row-Level Security (RLS).
 - **Tenant Management**: Easily switch between tenants without re-logging.
 
-### 🛠️ Low-Code Custom Module Builder
-- **Dynamic UI**: Build custom data entry forms (Inventory, Projects, Asset tracking) directly from the app.
-- **JSON-Driven Engine**: Modules are defined via JSON schemas and rendered dynamically.
-- **Data Persistence**: Custom module records are stored in a flexible schema-less format.
+### 📈 Investment Portfolio
+- **Asset Tracking**: Track stocks, mutual funds, SIPs, gold, and crypto in one place.
+- **Profit/Loss Analysis**: Real-time valuation and performance metrics.
+- **Financial Calculators**: Integrated SIP and EMI calculators for better planning.
 
-### 📶 Offline-First Experience
-- **Isar Integration**: Local high-performance NoSQL database (Isar) for offline data access on Mobile and Desktop.
-- **Smart Sync**: Automatically caches data from Supabase and allows seamless interaction even without internet connectivity.
-- **Web Support**: On Web, the app falls back to direct Supabase interaction to ensure maximum stability (due to current Isar 3.x web limitations).
+### 💰 Transaction Management
+- **CRUD Operations**: Complete control over income and expense records.
+- **Categorization**: Group transactions for detailed spending insights.
+- **Real-time Sync**: Data is instantly synchronized across all your devices via Supabase.
 
 ### 📊 Advanced Reporting
 - **PDF Ledger**: Generate professional monthly financial statements.
@@ -43,7 +43,6 @@ VZHA TrackIt is an enterprise-grade, multi-tenant financial management platform 
 - **Frontend**: Flutter (3.2x+)
 - **State Management**: Riverpod (Functional & Class-based Providers)
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **Local DB**: Isar (Cross-platform NoSQL)
 - **Navigation**: GoRouter (Declarative Routing)
 - **Styling**: Material 3 with Dynamic Theme Support
 
@@ -65,9 +64,6 @@ cd vzha_trackit
 
 # Install dependencies
 flutter pub get
-
-# Generate Isar Schema (Requires build_runner)
-flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ### 3. Run the App
@@ -82,7 +78,7 @@ flutter run -d android
 ---
 
 ## 📦 Deployment & CI/CD
-The project includes a **GitHub Actions** workflow (`flutter_build.yml`) that automatically generates:
+The project includes a **GitHub Actions** workflow that automatically generates:
 - Release APKs and AABs for Android.
 - Web deployment bundles.
 - Automatic builds on every push to the `main` branch.

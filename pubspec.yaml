@@ -39,8 +39,6 @@ dependencies:
   go_router: ^17.2.3
   fl_chart: ^1.2.0
   google_fonts: ^8.1.0
-  isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1
   path_provider: ^2.1.5
   image_picker: ^1.1.2
   shared_preferences: ^2.3.2
@@ -52,7 +50,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  isar_generator: ^3.1.0+1
   build_runner: ^2.4.13
 
   # The "flutter_lints" package below contains a set of recommended lints to

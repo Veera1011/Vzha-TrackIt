@@ -1,15 +1,6 @@
-import 'package:isar/isar.dart';
-
-part 'transaction_model.g.dart';
-
-@collection
 class TransactionModel {
-  Id isarId = Isar.autoIncrement;
-  
-  @Index(unique: true, replace: true)
   final String id;
   
-  @Index()
   final String tenantId;
   
   final String? accountId;

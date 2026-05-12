@@ -124,50 +124,76 @@ class MasterDataScreen extends ConsumerWidget {
     final accountsAsync = ref.watch(accountsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Master Data')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Accounts', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              IconButton(icon: const Icon(Icons.add), onPressed: () => _addAccount(context, ref)),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Master Data'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.account_balance), text: 'Accounts'),
+              Tab(icon: Icon(Icons.category), text: 'Categories'),
             ],
           ),
-          accountsAsync.when(
-            data: (accounts) => Column(
-              children: accounts.map((a) => ListTile(
-                leading: const Icon(Icons.account_balance),
-                title: Text(a.name),
-                subtitle: Text(a.type),
-                trailing: Text('\$${a.balance}'),
-              )).toList(),
+        ),
+        body: TabBarView(
+          children: [
+            // Accounts Tab
+            RefreshIndicator(
+              onRefresh: () async => ref.invalidate(accountsProvider),
+              child: accountsAsync.when(
+                data: (accounts) => ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: accounts.length,
+                  itemBuilder: (context, index) {
+                    final a = accounts[index];
+                    return ListTile(
+                      leading: const Icon(Icons.account_balance),
+                      title: Text(a.name),
+                      subtitle: Text(a.type),
+                      trailing: Text('\$${a.balance}'),
+                    );
+                  },
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Center(child: Text('Error: $e')),
+              ),
             ),
-            loading: () => const CircularProgressIndicator(),
-            error: (e, s) => Text('Error: $e'),
-          ),
-          const Divider(height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Categories', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              IconButton(icon: const Icon(Icons.add), onPressed: () => _addCategory(context, ref)),
-            ],
-          ),
-          categoriesAsync.when(
-            data: (categories) => Column(
-              children: categories.map((c) => ListTile(
-                leading: Icon(c.type == 'income' ? Icons.arrow_downward : Icons.arrow_upward),
-                title: Text(c.name),
-                subtitle: Text(c.type),
-              )).toList(),
+            // Categories Tab
+            RefreshIndicator(
+              onRefresh: () async => ref.invalidate(categoriesProvider),
+              child: categoriesAsync.when(
+                data: (categories) => ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final c = categories[index];
+                    return ListTile(
+                      leading: Icon(c.type == 'income' ? Icons.arrow_downward : Icons.arrow_upward),
+                      title: Text(c.name),
+                      subtitle: Text(c.type),
+                    );
+                  },
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Center(child: Text('Error: $e')),
+              ),
             ),
-            loading: () => const CircularProgressIndicator(),
-            error: (e, s) => Text('Error: $e'),
+          ],
+        ),
+        floatingActionButton: Builder(
+          builder: (context) => FloatingActionButton(
+            onPressed: () {
+              final tabController = DefaultTabController.of(context);
+              if (tabController.index == 0) {
+                _addAccount(context, ref);
+              } else {
+                _addCategory(context, ref);
+              }
+            },
+            child: const Icon(Icons.add),
           ),
-        ],
+        ),
       ),
     );
   }
